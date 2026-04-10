@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVC-E</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK (Compat version for simplicity in global scoping) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-black select-none overflow-hidden m-0 text-white">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="background-image: url('assets/background.png'); background-size: cover; background-position: center;" class="fixed inset-0 bg-[#0f172a] z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="absolute inset-0 bg-black/50 z-0 backdrop-blur-sm"></div>
+        
+        <div class="z-10 flex flex-col items-center max-w-3xl px-8 text-center flex-1 justify-center relative">
+            <div class="absolute top-0 transform -translate-y-[150%] text-indigo-500/30 text-6xl animate-pulse mb-8 pointer-events-none">💎</div>
+            <div id="intro-text" class="font-outfit text-2xl md:text-3xl font-light tracking-wide text-indigo-100/90 leading-relaxed min-h-[160px] drop-shadow-md"></div>
+        </div>
+
+        <div class="z-10 w-64 md:w-96 h-1 bg-white/10 mt-8 overflow-hidden shadow-[0_0_15px_rgba(99,102,241,0.5)] mb-4">
+            <div id="loading-bar" class="h-full bg-indigo-500 w-0 transition-all duration-300"></div>
+        </div>
+        
+        <div class="z-10 mb-12 h-10">
+            <button id="skip-intro-btn" class="px-8 py-2 border border-white/20 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all duration-500 font-outfit uppercase tracking-widest text-sm opacity-0 hidden">
+                Geç
+            </button>
+        </div>
+    </div>
+
+    <!-- Auth Screen -->
+    <div id="auth-screen" style="background-image: url('assets/background.png'); background-size: cover; background-position: center;" class="fixed inset-0 z-[150] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md z-0"></div>
+        <div class="z-10 glass-panel p-12 py-16 rounded-3xl text-center border-indigo-500/30 transform transition-transform duration-500 shadow-[0_0_100px_rgba(79,70,229,0.2)] relative min-w-[350px]">
+            <h1 class="text-6xl font-outfit font-black mb-2 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 glow-text drop-shadow-2xl">GİRİŞ</h1>
+            <p class="text-emerald-300/80 font-medium mb-10 text-sm tracking-widest uppercase">Premium Miner Kimlik Doğrulama</p>
+
+            <div class="space-y-4 mb-6">
+                <input type="email" id="auth-email" class="w-full bg-black/50 border border-emerald-500/50 rounded-xl px-4 py-3 text-white text-center font-outfit focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all font-bold" placeholder="E-Posta">
+                <input type="password" id="auth-password" class="w-full bg-black/50 border border-emerald-500/50 rounded-xl px-4 py-3 text-white text-center font-outfit focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all font-bold" placeholder="Şifre (En az 6 haneli)">
+            </div>
+            
+            <div id="auth-error" class="hidden text-red-400 font-bold text-xs mb-4 p-2 bg-red-900/30 rounded border border-red-500/30">Hata mesajı</div>
+
+            <p class="text-slate-500 text-[0.65rem] font-bold uppercase tracking-wide mb-3 max-w-xs mx-auto leading-relaxed">
+                İlk kez oynuyorsanız <span class="text-emerald-400/90">Hesap Oluştur</span>; zaten kayıtlıysanız <span class="text-emerald-400/90">Giriş Yap</span>.
+            </p>
+
+            <div class="space-y-3 flex flex-col items-center">
+                <button type="button" onclick="loginWithEmail()" class="w-full px-6 py-4 font-outfit font-black text-lg uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-lg active:scale-95 text-white">
+                    Giriş Yap
+                </button>
+                <div class="flex gap-3 w-full">
+                    <button type="button" onclick="registerWithEmail()" class="flex-1 px-4 py-3 font-outfit font-bold text-xs uppercase tracking-widest bg-transparent border border-emerald-500/50 hover:bg-emerald-900/40 rounded-xl transition-all text-emerald-300 active:scale-95">
+                        Hesap Oluştur
+                    </button>
+                    <button type="button" onclick="loginWithGoogle()" class="flex-1 flex gap-2 items-center justify-center px-4 py-3 font-outfit font-bold text-xs uppercase tracking-widest bg-white hover:bg-gray-200 rounded-xl transition-all text-black active:scale-95 shadow-md">
+                        Google
+                    </button>
+                </div>
+                <button type="button" onclick="loginAsGuest()" class="w-full mt-2 px-4 py-3 font-outfit font-bold text-xs uppercase tracking-widest bg-transparent border border-slate-500/50 hover:bg-slate-800/60 rounded-xl transition-all text-slate-400 active:scale-95">
+                    Misafir Olarak Oyna
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="click-to-start" style="background-image: url('assets/background.png'); background-size: cover; background-position: center;" class="fixed inset-0 z-[100] flex flex-col items-center justify-center hidden transition-opacity duration-300">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm z-0"></div>
+        <div class="z-10 glass-panel p-16 rounded-3xl text-center border-indigo-500/30 transform hover:scale-[1.02] transition-transform duration-500 shadow-[0_0_100px_rgba(79,70,229,0.2)] relative overflow-hidden">
+            <h1 class="text-7xl font-outfit font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 glow-text drop-shadow-2xl">AVC-E</h1>
+            <p class="text-indigo-300 font-medium mb-8 text-xl tracking-widest uppercase">Derinlere Yolculuk</p>
+            
+            <div class="mb-8 w-full max-w-[280px] mx-auto">
+                <input type="text" id="player-name-input" value="" maxlength="12" inputmode="text" pattern="[0-9A-Za-zÇÖŞÜĞİçöşüğıİı]*" autocomplete="off" title="En fazla 12 karakter; yalnızca harf ve rakam" class="w-full bg-black/50 border border-indigo-500/50 rounded-xl px-4 py-3 text-emerald-400 text-center font-outfit text-xl font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all uppercase tracking-widest" placeholder="İsim (12 karakter, harf/rakam)">
+            </div>
+
+            <div id="start-buttons" class="space-y-4 flex flex-col items-center">
+                <button id="btn-load-game" onclick="startGame(true)" class="hidden group relative px-16 py-6 w-full font-outfit font-black text-2xl uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_0_40px_rgba(16,185,129,0.6)] active:scale-95">
+                    <span class="relative z-10">Kayıtlı Oyuna Devam Et</span>
+                </button>
+                <button onclick="startGame(false)" class="group relative px-16 py-6 w-full font-outfit font-black text-xl uppercase tracking-widest bg-indigo-600 hover:bg-indigo-500 rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_0_40px_rgba(99,102,241,0.6)] active:scale-95">
+                    <span class="relative z-10">Yeni Maceraya Başla</span>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mt-12 uppercase font-bold opacity-80 leading-relaxed">
+                Yön Tuşları / WASD: Hareket (Yukarı tuşu ile Jetpack)<br>
+                Bloklara Çarparak Kazı Yap<br>
+                Binalarda E Tuşu ile Etkileşim
+            </p>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="game" tabindex="0" class="block outline-none w-full h-full"></canvas>
+
+    <!-- Solar geçiş bildirimi (5 sn) -->
+    <div id="solar-switch-toast" class="fixed left-1/2 z-[100] max-w-[min(92vw,22rem)] -translate-x-1/2 pointer-events-none opacity-0 transition-opacity duration-500 hidden" style="top: max(5.5rem, calc(env(safe-area-inset-top, 0px) + 4.5rem));">
+        <div class="rounded-2xl border border-yellow-400/45 bg-slate-950/95 px-4 py-3 text-center font-outfit text-sm font-bold leading-snug text-yellow-50 shadow-[0_20px_50px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+            Ana enerjimiz tükendi!, Solara geçildi..
+        </div>
+    </div>
+
+    <!-- Solar batarya düşük uyarısı (5 sn) -->
+    <div id="solar-low-toast" class="fixed left-1/2 z-[100] max-w-[min(92vw,22rem)] -translate-x-1/2 pointer-events-none opacity-0 transition-opacity duration-500 hidden" style="top: max(8.5rem, calc(env(safe-area-inset-top, 0px) + 7.5rem));">
+        <div class="rounded-2xl border border-orange-400/50 bg-slate-950/95 px-4 py-3 text-center font-outfit text-sm font-bold leading-snug text-orange-50 shadow-[0_20px_50px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+            Bizi bitirdin bee..
+        </div>
+    </div>
+
+    <!-- Main UI HUD -->
+    <div id="ui" class="absolute inset-0 pointer-events-none z-20 flex flex-col hidden">
+        <!-- Sağ üst köşe: padding’siz, viewport’a sabit -->
+        <div class="fixed z-30 pointer-events-none flex flex-col items-end gap-2 left-0 top-0 right-0 p-3 sm:p-4" style="padding-top: max(0.75rem, env(safe-area-inset-top)); padding-right: max(0.75rem, env(safe-area-inset-right));">
+            <div class="pointer-events-auto flex items-center gap-2 p-1 rounded-2xl bg-slate-950/60 backdrop-blur-xl border border-white/[0.07] shadow-[0_12px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <button type="button" onclick="openPremiumModal()" title="Gerçek Para Mağazası" class="group flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl font-outfit text-[0.65rem] font-bold uppercase tracking-[0.18em] text-fuchsia-100/95 bg-gradient-to-b from-fuchsia-500/20 to-fuchsia-600/10 border border-fuchsia-400/25 hover:border-fuchsia-300/45 hover:from-fuchsia-400/30 hover:shadow-[0_0_24px_rgba(217,70,239,0.15)] transition-all duration-300 active:scale-[0.97]">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-fuchsia-500/15 border border-fuchsia-400/20 text-base leading-none shadow-inner">💎</span>
+                    <span class="hidden sm:inline">E-Store</span>
+                </button>
+                <span class="w-px h-8 bg-gradient-to-b from-transparent via-white/15 to-transparent" aria-hidden="true"></span>
+                <button type="button" onclick="openLeaderboard()" title="Liderlik panosu" class="group flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl font-outfit text-[0.65rem] font-bold uppercase tracking-[0.18em] text-amber-100/95 bg-gradient-to-b from-amber-500/20 to-amber-600/10 border border-amber-400/25 hover:border-amber-300/45 hover:from-amber-400/30 hover:shadow-[0_0_24px_rgba(251,191,36,0.15)] transition-all duration-300 active:scale-[0.97]">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-400/20 text-base leading-none shadow-inner">🏆</span>
+                    <span class="hidden sm:inline">Liderlik</span>
+                </button>
+                <span class="w-px h-8 bg-gradient-to-b from-transparent via-white/15 to-transparent" aria-hidden="true"></span>
+                <button type="button" onclick="logout()" title="Oturumu kapat" class="group flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl font-outfit text-[0.65rem] font-bold uppercase tracking-[0.18em] text-rose-100/90 bg-gradient-to-b from-rose-500/15 to-rose-900/20 border border-rose-400/20 hover:border-rose-400/40 hover:from-rose-500/25 hover:shadow-[0_0_20px_rgba(244,63,94,0.12)] transition-all duration-300 active:scale-[0.97]">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/15 border border-rose-400/15 text-base leading-none">🚪</span>
+                    <span class="hidden sm:inline">Çıkış</span>
+                </button>
+                <span class="w-px h-8 bg-gradient-to-b from-transparent via-white/15 to-transparent" aria-hidden="true"></span>
+                <button type="button" onclick="openAboutModal()" title="Hakkında" class="group flex items-center gap-2 pl-3 pr-4 py-2 rounded-xl font-outfit text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-100/95 bg-gradient-to-b from-indigo-500/25 to-slate-900/40 border border-indigo-400/30 hover:border-indigo-300/50 hover:from-indigo-400/35 hover:shadow-[0_0_20px_rgba(99,102,241,0.2)] transition-all duration-300 active:scale-[0.97]">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-400/25 text-base leading-none shadow-inner">ℹ️</span>
+                    <span class="hidden sm:inline">Hakkında</span>
+                </button>
+            </div>
+            <!-- Global ilk 3: şeffaf kürsü (butonların altı) -->
+            <div id="hud-top3-wrap" class="pointer-events-none w-full max-w-[min(100%,19rem)] flex flex-col items-stretch">
+                <div class="rounded-2xl border border-amber-400/20 bg-gradient-to-b from-slate-950/25 via-slate-950/10 to-transparent backdrop-blur-xl px-2 py-2 sm:py-2.5 shadow-[0_18px_56px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-white/[0.04]">
+                    <div class="text-[0.5rem] sm:text-[0.52rem] font-black tracking-[0.14em] sm:tracking-[0.18em] text-center mb-1.5 sm:mb-2 bg-gradient-to-r from-amber-100/95 via-amber-300 to-amber-100/95 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(251,191,36,0.2)]">BABA PİROLAR</div>
+                    <div id="hud-top3-podium" class="flex items-end justify-center gap-1 sm:gap-1.5 min-h-[6.25rem] sm:min-h-[6.5rem]">
+                        <div class="flex-1 flex items-center justify-center text-slate-400/90 text-[0.62rem] font-semibold py-3">Yükleniyor…</div>
+                    </div>
+                </div>
+            </div>
+            <div id="interaction-tooltip" class="pointer-events-none glass-panel px-4 py-3 sm:px-5 sm:py-3.5 rounded-xl opacity-0 transition-opacity duration-300 flex items-center gap-2.5 border border-white/20 max-w-[min(92vw,18rem)]">
+                <div class="bg-white/20 px-2.5 py-1 rounded-md font-black text-base shrink-0">E</div>
+                <div class="font-bold text-xs sm:text-sm text-right leading-snug" id="tooltip-text">Etkileşim</div>
+            </div>
+        </div>
+
+        <div class="p-2 pt-3 sm:p-4 sm:pt-4 md:p-8 flex justify-between items-start w-full flex-1 min-h-0 gap-2">
+            
+            <!-- Sol: durum paneli (sistem mesajları paneli geçici olarak kapalı) -->
+            <div class="flex flex-col sm:flex-row items-stretch gap-2 min-w-0 shrink-0">
+            <div id="hud-status-shell" role="button" tabindex="0" aria-expanded="true" aria-label="Durum paneli — genişletmek veya daraltmak için tıklayın" title="Paneli daraltmak için tıklayın" class="hud-status-shell pointer-events-auto cursor-pointer relative w-full max-w-[min(100%,20rem)] sm:max-w-[22rem] shrink-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-white/[0.09] bg-gradient-to-b from-slate-950/[0.62] via-slate-900/58 to-slate-950/[0.64] shadow-[0_28px_90px_-18px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl transition-[max-width] duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+                <div class="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-[radial-gradient(ellipse_120%_80%_at_0%_-20%,rgba(251,191,36,0.12),transparent_50%),radial-gradient(ellipse_100%_60%_at_100%_100%,rgba(99,102,241,0.1),transparent_45%)] opacity-60 hud-status-ambient"></div>
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/70 to-transparent hud-status-scan"></div>
+                <div id="hud-status-compact" class="hidden relative z-10 px-3 py-8 sm:py-7 text-center">
+                    <div class="font-outfit font-black text-amber-300/95 text-sm tabular-nums leading-tight" title="Bakiye"><span id="hud-compact-money">0</span></div>
+                    <div class="font-outfit font-bold text-indigo-300/90 text-xs tabular-nums mt-1" title="Derinlik"><span id="hud-compact-depth">0</span><span class="text-indigo-400/80">m</span></div>
+                </div>
+                <div id="hud-status-body" class="relative z-10 p-3 sm:p-5 md:p-6">
+                    <div class="mb-3 sm:mb-4 pb-3 border-b border-white/[0.07]">
+                        <div class="font-outfit text-[0.7rem] sm:text-sm font-bold tracking-wide truncate" title="Oyuncu">
+                            <span class="text-cyan-200/85">AVC-E:</span>
+                            <span id="hud-name" class="text-cyan-50/95 ml-1">AVCI-E</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 min-[400px]:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                        <div class="hud-stat-tile rounded-xl sm:rounded-2xl border border-white/[0.06] bg-slate-950/26 p-2.5 sm:p-3 shadow-inner">
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <span class="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.15em] text-cyan-200/75 font-bold">Bakiye</span>
+                                <span class="text-lg leading-none opacity-90">💰</span>
+                            </div>
+                            <div class="font-outfit text-2xl sm:text-3xl md:text-4xl font-black tabular-nums tracking-tight bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(251,191,36,0.25)] hud-stat-value">
+                                <span id="money">0</span>
+                            </div>
+                        </div>
+                        <div class="hud-stat-tile rounded-xl sm:rounded-2xl border border-white/[0.06] bg-slate-950/26 p-2.5 sm:p-3 shadow-inner text-right min-[400px]:text-left">
+                            <div class="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.15em] text-indigo-200/70 font-bold mb-1">Derinlik</div>
+                            <div class="text-[0.65rem] uppercase tracking-wider text-slate-500 font-bold truncate mb-0.5 max-w-full">
+                                <span id="layer-name" class="text-white/95">Yeryüzü</span>
+                            </div>
+                            <div class="font-outfit text-xl sm:text-2xl md:text-3xl font-black tabular-nums text-indigo-300 drop-shadow-[0_0_20px_rgba(129,140,248,0.35)]">
+                                <span id="depth-m">0</span><span class="text-sm sm:text-base font-bold text-indigo-200/80 ml-0.5">m</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 sm:space-y-3.5 pt-3 border-t border-white/[0.07]">
+                        <div id="energy-hud-block">
+                            <div class="flex justify-between items-center font-outfit font-bold mb-1.5 gap-2">
+                                <span class="text-slate-400 text-[0.65rem] sm:text-xs tracking-wide" id="energy-label">Ana Enerji</span>
+                                <span class="text-sky-300 text-[0.65rem] sm:text-xs tabular-nums font-black" id="energy-text">%100</span>
+                            </div>
+                            <div id="energy-bar-track" class="hud-bar-track hud-bar-track-energy h-2.5 sm:h-3 rounded-full" style="--energy-hue: 195;">
+                                <div id="energy-bar" class="hud-bar-fill hud-bar-fill-energy h-full rounded-full relative overflow-hidden transition-[width] duration-300 ease-out" style="width: 100%">
+                                    <span class="hud-bar-shine" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="solar-container" class="hidden">
+                            <div class="flex justify-between items-center font-outfit font-bold mb-1.5 gap-2">
+                                <span class="text-amber-200/90 text-[0.65rem] sm:text-xs font-black tracking-wide">Solar Yedek</span>
+                                <span class="text-amber-300 text-[0.65rem] sm:text-xs tabular-nums font-black" id="solar-text">100/100</span>
+                            </div>
+                            <div class="hud-bar-track hud-bar-track-amber h-2.5 sm:h-3 rounded-full">
+                                <div id="solar-bar" class="hud-bar-fill hud-bar-fill-amber h-full rounded-full relative overflow-hidden transition-[width] duration-300 ease-out shadow-[0_0_14px_rgba(250,204,21,0.35)]" style="width: 100%">
+                                    <span class="hud-bar-shine hud-bar-shine-slow" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-white/[0.07] bg-slate-950/20 p-2.5 sm:p-3">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.12em] text-slate-400 font-bold">Depo</span>
+                                <span class="text-[0.7rem] sm:text-xs font-black text-white tabular-nums" id="inv-text">0/10</span>
+                            </div>
+                            <div class="hud-bar-track hud-bar-track-slate h-1.5 sm:h-2 rounded-full">
+                                <div id="inv-bar" class="hud-bar-fill hud-bar-fill-slate h-full rounded-full relative overflow-hidden transition-[width] duration-500 ease-out w-0">
+                                    <span class="hud-bar-shine" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="skill-cooldown-box" class="hidden rounded-xl border border-purple-500/35 bg-purple-950/16 p-2.5 sm:p-3 shadow-[0_0_24px_rgba(168,85,247,0.12)]">
+                            <div class="flex justify-between items-center mb-1.5 gap-2">
+                                <span class="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.12em] text-purple-300 font-bold" id="skill-name">Yetenek (F)</span>
+                                <span class="text-[0.65rem] sm:text-xs font-black text-purple-100 tabular-nums" id="skill-time">HAZIR</span>
+                            </div>
+                            <div class="hud-bar-track hud-bar-track-purple h-1.5 sm:h-2 rounded-full">
+                                <div id="skill-bar" class="hud-bar-fill hud-bar-fill-purple h-full rounded-full relative overflow-hidden transition-all duration-100 w-full">
+                                    <span class="hud-bar-shine" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="chips-box" class="rounded-xl border border-white/[0.07] bg-slate-950/18 px-2.5 py-2 sm:p-3 flex flex-col gap-2">
+                            <span class="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.12em] text-slate-400 font-bold">Donanım</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-b from-orange-950/80 to-slate-950/90 border border-orange-500/35 px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" title="Kazma seviyesi">
+                                    <span class="text-sm leading-none" aria-hidden="true">⛏️</span>
+                                    <span class="font-outfit text-xs font-black text-orange-200 tabular-nums tracking-tight"><span id="pick-lvl">1</span></span>
+                                </div>
+                                <div class="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-b from-orange-950/85 to-slate-950/90 border border-orange-400/45 px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" title="Uçuş motoru (jetpack) — Teknoloji Merkezi">
+                                    <span class="text-sm leading-none" aria-hidden="true">🚀</span>
+                                    <span class="font-outfit text-xs font-black text-orange-100 tabular-nums tracking-tight"><span id="hud-flight-motor-lvl">0/10</span></span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-center gap-2 sm:gap-2.5 pt-0.5 border-t border-white/[0.06]">
+                                <div id="chip-antitoxin" class="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-black/38 border border-slate-600/80 flex items-center justify-center grayscale opacity-50 transition-all duration-300 text-base" title="Anti-Toksin Çipi - Zehir Hasarını Engeller">🧪</div>
+                                <div id="chip-cooling" class="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-black/38 border border-slate-600/80 flex items-center justify-center grayscale opacity-50 transition-all duration-300 text-base" title="Soğutucu Çip - Magma Enerji Tüketimini Engeller">❄️</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+            <!-- Right Side HUD: radar (bina ipucu fixed sağ üst, butonların altında) -->
+            <div class="flex flex-col items-end gap-3 self-start">
+                <!-- Mini-map -->
+                <div id="radar-widget" class="hidden glass-panel p-4 rounded-2xl border-r-[6px] border-emerald-500 shadow-2xl flex flex-col items-center gap-2">
+                    <div class="text-[0.6rem] uppercase tracking-widest text-emerald-200/70 font-bold">Derinlik Radarı</div>
+                    <div id="minimap" class="minimap-container">
+                        <div id="minimap-player" class="minimap-player"></div>
+                        <!-- Katmanlar JS icinden eklenecek -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modals" class="hidden pointer-events-auto fixed inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-center justify-center transition-opacity duration-300 opacity-0 px-3 sm:px-5 py-4 sm:py-6 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+        
+        <!-- Hakkımızda: flex kolon + kaydırılabilir gövde + sabit kapat (küçük ekran / çentik uyumu) -->
+        <div id="modal-about" class="glass-panel hidden modal-content flex w-full max-w-lg min-h-0 max-h-[min(92dvh,44rem)] flex-col overflow-hidden rounded-2xl border border-indigo-500/40 shadow-[0_25px_80px_-24px_rgba(0,0,0,0.85)] sm:max-h-[min(90vh,46rem)] sm:rounded-3xl">
+            <div class="about-modal-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4 md:px-8 md:pt-8 [scrollbar-gutter:stable]">
+                <div class="flex flex-col gap-5 md:flex-row md:items-start md:gap-6 lg:gap-8">
+                    <div class="mx-auto shrink-0 md:mx-0 md:w-[38%] md:max-w-[200px]">
+                        <img src="assets/avc-e.png" alt="AVC-E Premium Miner — endüstriyel maden robotu" width="320" height="320" class="mx-auto h-auto w-full max-w-[11.5rem] rounded-xl border border-indigo-400/25 object-contain shadow-[0_20px_50px_-18px_rgba(0,0,0,0.8)] ring-1 ring-white/5 sm:max-w-[13.5rem] sm:rounded-2xl md:max-w-none" loading="lazy" decoding="async" />
+                    </div>
+                    <div class="min-w-0 flex-1 text-center md:text-left">
+                        <h2 class="font-outfit text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-indigo-300 sm:text-3xl md:text-4xl">Hakkımızda</h2>
+                        <p class="mt-1 text-[0.6rem] font-bold uppercase tracking-[0.18em] text-slate-500 sm:text-[0.65rem] sm:tracking-[0.2em]">AVC-E Premium Miner</p>
+                        <p class="mt-3 border-b border-white/10 pb-4 text-xs leading-relaxed text-slate-400 sm:mt-4 sm:text-sm sm:leading-relaxed md:pb-5">
+                            Derin maden dünyasında maceraya çıkan oyuncular için geliştirilmiş premium bir deneyim. Proje; oyun tasarımı, kodlama ve yapay zeka çerçevesinde ortaokul öğrencileriyle birlikte şekillenmektedir. Aşağıda geliştirici takımına dair bilgileri bulabilirsiniz.
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="mb-3 text-center text-[0.625rem] font-black uppercase tracking-[0.18em] text-indigo-300/90 sm:mb-4 sm:text-xs sm:tracking-[0.2em] md:text-left">Takım</h3>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                    <article class="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-slate-950/60 p-3 sm:rounded-2xl sm:p-4">
+                        <div class="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/90 sm:text-[0.65rem]">Takım Lideri</div>
+                        <div class="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:text-left">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-indigo-600 to-slate-900 font-outfit text-base font-black text-white sm:h-12 sm:w-12 sm:text-lg">EA</div>
+                            <div class="min-w-0 flex-1 text-center sm:text-left">
+                                <div class="font-outfit text-base font-black leading-tight text-white sm:text-lg">Emre AVCI</div>
+                                <p class="mt-0.5 text-[0.7rem] leading-snug text-slate-500 sm:text-xs">Sistem mimarı · Yazılımcı · Girişimci · Eğitimci</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-2 pt-0.5 sm:justify-start">
+                            <a href="https://github.com/btemre" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-white/10 bg-slate-900/80 text-slate-200 transition-colors hover:border-indigo-400/40 hover:bg-slate-800 hover:text-white active:scale-[0.98]" title="GitHub" aria-label="GitHub">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            </a>
+                            <a href="https://www.linkedin.com/in/eavci/" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-white/10 bg-slate-900/80 text-[#0A66C2] transition-colors hover:border-[#0A66C2]/50 hover:bg-slate-800 active:scale-[0.98]" title="LinkedIn" aria-label="LinkedIn">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            </a>
+                            <a href="https://emreavci.com" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-white/10 bg-slate-900/80 text-emerald-400 transition-colors hover:border-emerald-400/45 hover:bg-slate-800 hover:text-emerald-300 active:scale-[0.98]" title="emreavci.com" aria-label="emreavci.com">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                            </a>
+                        </div>
+                    </article>
+                    <article class="flex flex-col gap-2 rounded-xl border border-dashed border-white/[0.12] bg-slate-950/40 p-3 sm:rounded-2xl sm:p-4 sm:gap-3">
+                        <div class="text-[0.6rem] font-black uppercase tracking-widest text-emerald-400/90 sm:text-[0.65rem]">Geliştiriciler</div>
+                        <p class="text-center text-xs leading-relaxed text-slate-500 sm:text-left">Öğrenci ve mentör ekip üyeleri buraya eklenebilir. İsim satırları için bu kutuyu genişletebilirsiniz.</p>
+                    </article>
+                </div>
+            </div>
+            <div class="shrink-0 border-t border-white/10 bg-slate-950/80 px-4 py-3 backdrop-blur-sm sm:px-6 md:px-8 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+                <button type="button" onclick="closeModal()" class="min-h-12 w-full rounded-xl py-3 text-sm font-bold uppercase tracking-wide text-slate-300 transition-colors hover:bg-white/5 hover:text-white active:scale-[0.99] sm:min-h-11 sm:py-2.5">Kapat <span class="font-normal text-slate-500">Esc · K</span></button>
+            </div>
+        </div>
+
+        <!-- House Modal -->
+        <div id="modal-house" class="glass-panel p-10 rounded-3xl border border-blue-500/50 hidden modal-content w-[400px]">
+            <h2 class="text-4xl font-outfit font-black text-blue-400 mb-2 text-center">EV</h2>
+            <p class="text-slate-400 text-center text-xs mb-8 font-bold uppercase tracking-widest">Dinlen ve Enerjini Doldur</p>
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">🛏️</div>
+                <div class="text-sm text-slate-300">Madene inmek çok yorucu. Burada dinlenerek enerjini tamamen doldurabilirsin.</div>
+            </div>
+            <button onclick="actionSleep()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-lg transition-transform active:scale-95 shadow-lg">Şarj Ol <span class="text-white/50 text-sm font-medium">Enter</span></button>
+            <button onclick="closeModal()" class="w-full mt-4 py-3 text-slate-400 font-bold hover:text-white text-sm uppercase">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Market Modal -->
+        <div id="modal-market" class="glass-panel p-10 rounded-3xl border border-yellow-500/50 hidden modal-content w-[400px]">
+            <h2 class="text-4xl font-outfit font-black text-yellow-400 mb-2 text-center">MARKET</h2>
+            <p class="text-slate-400 text-center text-xs mb-8 font-bold uppercase tracking-widest">Cevherlerini Sat</p>
+            <div class="bg-black/40 p-6 rounded-xl border border-white/10 mb-8 text-center">
+                <div class="text-sm text-slate-400 mb-2">Mevcut Cevher Değeri</div>
+                <div class="text-4xl font-black text-emerald-400"><span id="market-val">0</span> 💰</div>
+            </div>
+            <button id="btn-sell" onclick="actionSell()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white py-4 rounded-xl font-black text-lg transition-transform active:scale-95 shadow-lg">Tümünü Sat <span class="text-white/50 text-sm font-medium">Enter</span></button>
+            <button onclick="closeModal()" class="w-full mt-4 py-3 text-slate-400 font-bold hover:text-white text-sm uppercase">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Warehouse Modal -->
+        <div id="modal-warehouse" class="glass-panel p-10 rounded-3xl border border-emerald-500/50 hidden modal-content w-[450px]">
+            <h2 class="text-4xl font-outfit font-black text-emerald-400 mb-2 text-center">DEPO</h2>
+            <p class="text-slate-400 text-center text-xs mb-8 font-bold uppercase tracking-widest">Envanter Kapasitesini Geliştir</p>
+            <div class="bg-black/40 p-6 rounded-xl border border-white/10 mb-8 flex items-center justify-between">
+                <div>
+                    <div class="font-bold text-xl mb-1 text-white">Büyük Çanta</div>
+                    <div class="text-xs text-slate-400 max-w-[150px]">Daha fazla cevher taşıyarak tek seferde daha çok kazan.</div>
+                </div>
+                <button onclick="actionUpgradeInv()" class="bg-emerald-600 hover:bg-emerald-500 px-6 py-4 rounded-xl font-black text-lg transition-scale active:scale-95 min-w-[120px]">
+                    <span id="cost-inv">100</span> 💰 <span class="text-emerald-200/80 text-xs block font-bold mt-0.5">Enter</span>
+                </button>
+            </div>
+            <button onclick="closeModal()" class="w-full text-slate-400 font-bold hover:text-white text-sm uppercase pt-4 border-t border-white/10">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Workshop Modal -->
+        <div id="modal-workshop" class="glass-panel p-10 rounded-3xl border border-orange-500/50 hidden modal-content w-[450px]">
+            <h2 class="text-4xl font-outfit font-black text-orange-400 mb-2 text-center">ATÖLYE</h2>
+            <p class="text-slate-400 text-center text-xs mb-8 font-bold uppercase tracking-widest">Kazma Gücünü Artır</p>
+            <div class="bg-black/40 p-6 rounded-xl border border-white/10 mb-8 flex items-center justify-between">
+                <div>
+                    <div class="font-bold text-xl mb-1 text-white">Güçlü Kazma</div>
+                    <div class="text-xs text-slate-400 max-w-[150px]">Daha sert madenleri kırabilir ve daha hızlı kazı yapabilirsin.</div>
+                </div>
+                <button onclick="actionUpgradePick()" class="bg-orange-600 hover:bg-orange-500 px-6 py-4 rounded-xl font-black text-lg transition-scale active:scale-95 min-w-[120px]">
+                    <span id="cost-pick">20</span> 💰 <span class="text-orange-200/80 text-xs block font-bold mt-0.5">Enter</span>
+                </button>
+            </div>
+            <button onclick="closeModal()" class="w-full text-slate-400 font-bold hover:text-white text-sm uppercase pt-4 border-t border-white/10">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Tech Center Modal: geniş ekranda 2 sütun, dar / kısa ekranda kaydırma -->
+        <div id="modal-tech" class="glass-panel rounded-3xl border border-cyan-500/50 hidden modal-content w-[min(96vw,52rem)] max-h-[min(92dvh,52rem)] flex flex-col p-4 sm:p-6 md:p-8">
+            <div class="shrink-0 text-center mb-3 sm:mb-4">
+                <img src="assets/teknolojimerkezi.png" alt="Teknoloji Merkezi" class="mx-auto max-h-28 sm:max-h-36 w-auto object-contain rounded-xl border border-cyan-500/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
+                <h2 class="text-2xl sm:text-4xl font-outfit font-black text-cyan-400 mt-3 mb-1">TEKNOLOJİ</h2>
+                <p class="text-slate-400 text-[0.65rem] sm:text-xs font-bold uppercase tracking-widest">Gelişmiş Araştırmalar</p>
+                <p class="text-center text-[0.6rem] sm:text-[0.65rem] text-cyan-500/80 font-bold uppercase tracking-wide mt-3 leading-relaxed px-1 max-w-2xl mx-auto">
+                    1 Fener · 2 Solar · 3 Exo · 4 Drone · 5 Radar · 6 Uçuş motoru · <span class="whitespace-nowrap">Kapat: K</span>
+                </p>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 -mr-0.5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pb-1">
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-white/10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-white">Güçlü Fener</div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Karanlık derinlikleri aydınlatır.</div>
+                        </div>
+                        <button type="button" onclick="actionUpgradeLight()" class="shrink-0 bg-cyan-600 hover:bg-cyan-500 px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px] text-white">
+                            <span id="cost-light">200</span> 💰 <span class="text-cyan-200/90 text-[0.65rem] block">1</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-yellow-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-yellow-400">Solar Enerji <span class="text-xs bg-yellow-600 text-black px-1 rounded ml-1 align-middle" id="lvl-solar">0</span></div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Dayanıklı enerji; her seviyede sarfiyat azalır.</div>
+                        </div>
+                        <button type="button" onclick="actionUpgradeSolar()" class="shrink-0 bg-yellow-600 hover:bg-yellow-500 text-black px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            <span id="cost-solar">500</span> 💰 <span class="text-yellow-900/80 text-[0.65rem] block">2</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-gray-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-gray-400">Dış İskelet (Exo) <span class="text-xs bg-gray-600 text-white px-1 rounded ml-1 align-middle" id="lvl-exo">0</span></div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Ağırlık cezasını hafifletir.</div>
+                        </div>
+                        <button type="button" onclick="actionUpgradeExo()" class="shrink-0 bg-gray-600 hover:bg-gray-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            <span id="cost-exo">2000</span> 💰 <span class="text-gray-300/90 text-[0.65rem] block">3</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-orange-500/35 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-orange-300">Uçuş motoru <span class="text-xs bg-orange-600 text-white px-1 rounded ml-1 align-middle" id="lvl-flight">0</span></div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Jetpack sabit tırmanış hızını artırır.</div>
+                        </div>
+                        <button type="button" onclick="actionUpgradeFlightMotor()" class="shrink-0 bg-orange-600 hover:bg-orange-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            <span id="cost-flight">750</span> 💰 <span class="text-orange-100/90 text-[0.65rem] block">6</span>
+                        </button>
+                    </div>
+
+                    <div id="drone-buy-box" class="bg-black/40 p-3 sm:p-4 rounded-xl border border-sky-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-sky-400">Asistan Drone</div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Sizi takip eden yoldaş robot.</div>
+                        </div>
+                        <button type="button" onclick="actionBuyDrone()" class="shrink-0 bg-sky-600 hover:bg-sky-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            <span id="cost-drone">5000</span> 💰 <span class="text-sky-200/90 text-[0.65rem] block">4</span>
+                        </button>
+                    </div>
+
+                    <div id="radar-buy-box" class="bg-black/40 p-3 sm:p-4 rounded-xl border border-emerald-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-emerald-400">Derinlik Radarı</div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Derinlikte konumunu gösterir.</div>
+                        </div>
+                        <button type="button" onclick="actionBuyRadar()" class="shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            1500 💰 <span class="text-emerald-200/90 text-[0.65rem] block">5</span>
+                        </button>
+                    </div>
+
+                    <div id="radar-owned-box" class="hidden md:col-span-2 bg-black/40 p-3 sm:p-4 rounded-xl border border-emerald-500/30 text-center text-emerald-400 font-bold uppercase tracking-widest text-xs sm:text-sm">
+                        Derinlik Radarı Aktif
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="closeModal()" class="shrink-0 w-full text-slate-400 font-bold hover:text-white text-sm uppercase pt-3 sm:pt-4 mt-3 border-t border-white/10">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Academy Modal: dar / kısa ekranda kaydırma, Teknoloji modalı ile aynı düzen -->
+        <div id="modal-quest" class="glass-panel rounded-2xl sm:rounded-3xl border border-purple-500/50 hidden modal-content w-[min(96vw,42rem)] max-h-[min(92dvh,44rem)] flex flex-col overflow-hidden p-4 sm:p-6 md:p-8">
+            <div class="shrink-0 text-center mb-3 sm:mb-4">
+                <img src="assets/akademi.png" alt="Madencilik Akademisi" class="mx-auto max-h-24 sm:max-h-36 md:max-h-40 w-full max-w-[min(100%,16rem)] object-contain rounded-xl border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.15)]">
+                <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-outfit font-black text-purple-400 mt-2 sm:mt-3 mb-1 px-1 leading-tight">MADENCİLİK AKADEMİSİ</h2>
+                <p class="text-slate-500 text-[0.6rem] sm:text-xs font-bold uppercase tracking-wide sm:tracking-widest px-2 leading-relaxed">Bölüm: <span class="text-purple-400/90">1 / 2 / 3</span> · Ödül: <span class="text-purple-400/90">Enter</span> · <span class="whitespace-nowrap">Kapat: K</span></p>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 -mr-0.5 quest-modal-scroll touch-pan-y">
+                <!-- Kariyer / Sınıf Seçimi -->
+                <div id="role-selection-box" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-black/40 rounded-xl border border-white/10">
+                    <p class="text-slate-400 text-center text-[0.6rem] sm:text-xs mb-3 sm:mb-4 font-bold uppercase tracking-wide sm:tracking-widest leading-relaxed px-1">Akademik bölüm (yalnızca bir kez) · <span class="text-purple-400/90">1 / 2 / 3</span></p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                        <button type="button" onclick="selectRole('miner')" class="bg-gray-800 hover:bg-gray-700 p-3 sm:p-4 rounded-xl border border-purple-500/30 transition-transform active:scale-95 flex flex-col items-center text-center min-w-0">
+                            <div class="font-bold text-orange-400 mb-1.5 sm:mb-2 text-base sm:text-lg">⛏️ Madenci <span class="text-white/35 text-xs align-top">1</span></div>
+                            <div class="text-[0.65rem] sm:text-[0.7rem] text-slate-300 leading-snug">Yüksek kazalama vuruculuğu ve düşük kazı enerjisi harcaması.</div>
+                        </button>
+                        <button type="button" onclick="selectRole('engineer')" class="bg-gray-800 hover:bg-gray-700 p-3 sm:p-4 rounded-xl border border-purple-500/30 transition-transform active:scale-95 flex flex-col items-center text-center min-w-0">
+                            <div class="font-bold text-cyan-400 mb-1.5 sm:mb-2 text-base sm:text-lg">⚙️ Mühendis <span class="text-white/35 text-xs align-top">2</span></div>
+                            <div class="text-[0.65rem] sm:text-[0.7rem] text-slate-300 leading-snug">Tüm geliştirmelerde %20 indirim ve 1. Lv bedava Solar Batarya.</div>
+                        </button>
+                        <button type="button" onclick="selectRole('explorer')" class="bg-gray-800 hover:bg-gray-700 p-3 sm:p-4 rounded-xl border border-purple-500/30 transition-transform active:scale-95 flex flex-col items-center text-center min-w-0 sm:col-span-2 lg:col-span-1">
+                            <div class="font-bold text-emerald-400 mb-1.5 sm:mb-2 text-base sm:text-lg">🗺️ Kaşif <span class="text-white/35 text-xs align-top">3</span></div>
+                            <div class="text-[0.65rem] sm:text-[0.7rem] text-slate-300 leading-snug">Çok daha hızlı koşma ve karanlıkta daha geniş görüş mesafesi.</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seçili Sınıf Gösterimi -->
+                <div id="role-active-box" class="mb-4 sm:mb-6 hidden p-3 sm:p-4 bg-purple-900/30 rounded-xl border border-purple-500/30 text-center text-xs sm:text-sm font-bold text-purple-300 uppercase tracking-wide sm:tracking-widest leading-snug">
+                    Kayıtlı Bölüm: <span id="active-role-name" class="text-white">Yok</span>
+                </div>
+
+                <p class="text-slate-400 text-center text-[0.6rem] sm:text-xs mb-3 sm:mb-4 font-bold uppercase tracking-wide sm:tracking-widest leading-relaxed px-1">Akademik ödevler &amp; stajlar · Tamamlanan ödül: <span class="text-purple-400/90">Enter</span></p>
+                <div id="quest-list" class="space-y-3 sm:space-y-4 pb-1">
+                    <!-- Görevler JS ile buraya eklenecek -->
+                </div>
+            </div>
+
+            <button type="button" onclick="closeModal()" class="shrink-0 w-full text-slate-400 font-bold hover:text-white text-sm uppercase pt-3 sm:pt-4 mt-2 sm:mt-3 border-t border-white/10">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Premium Market Modal -->
+        <div id="modal-premium" class="glass-panel rounded-3xl border border-fuchsia-500/50 hidden modal-content w-[min(96vw,52rem)] max-h-[min(92dvh,52rem)] flex flex-col p-4 sm:p-6 md:p-8">
+            <div class="shrink-0 text-center mb-3 sm:mb-4">
+                <h2 class="text-2xl sm:text-4xl font-outfit font-black text-fuchsia-400 mt-3 mb-1">PREMIUM E-STORE</h2>
+                <p class="text-slate-400 text-[0.65rem] sm:text-xs font-bold uppercase tracking-widest">Sadece Gerçek Parayla (TL)</p>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 -mr-0.5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pb-1">
+
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-fuchsia-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-emerald-400">💸 Milyoner Paketi</div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Anında 1.000.000 💰 Kazandırır.</div>
+                        </div>
+                        <button type="button" onclick="actionBuyPremiumMoney()" class="shrink-0 bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            500 TL
+                        </button>
+                    </div>
+
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-fuchsia-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-orange-400">⛏️ Max Güç Paketi</div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Kazma seviyesini maksimuma çıkartır (Lv.200).</div>
+                        </div>
+                        <button type="button" onclick="actionBuyPremiumPick()" class="shrink-0 bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            500 TL
+                        </button>
+                    </div>
+
+                    <div class="bg-black/40 p-3 sm:p-4 rounded-xl border border-fuchsia-500/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:col-span-2">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-base sm:text-lg text-cyan-400">🚀 Full Teknoloji Paketi</div>
+                            <div class="text-[0.7rem] sm:text-xs text-slate-400 mt-0.5">Bütün teknolojik eşyaları fulller: Radar, Drone, Exo-Suit (MAX), Uçuş Motoru (MAX).</div>
+                        </div>
+                        <button type="button" onclick="actionBuyPremiumTech()" class="shrink-0 bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-4 py-3 rounded-xl font-black text-sm sm:text-base transition-scale active:scale-95 w-full sm:w-auto min-w-[100px] sm:min-w-[110px]">
+                            500 TL
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="closeModal()" class="shrink-0 w-full text-slate-400 font-bold hover:text-white text-sm uppercase pt-3 sm:pt-4 mt-3 border-t border-white/10">Kapat <span class="text-slate-500 font-normal">K</span></button>
+        </div>
+
+        <!-- Leaderboard Modal -->
+        <div id="modal-leaderboard" class="lb-modal-premium glass-panel hidden modal-content w-[min(96vw,900px)] max-h-[min(90vh,720px)] overflow-hidden flex flex-col relative rounded-[1.75rem] border border-amber-400/25 shadow-[0_0_0_1px_rgba(251,191,36,0.08),0_25px_80px_-12px_rgba(0,0,0,0.75),0_0_60px_-15px_rgba(245,158,11,0.12)]">
+            <div class="pointer-events-none absolute inset-0 rounded-[1.75rem] opacity-90 bg-gradient-to-br from-amber-500/[0.07] via-transparent to-violet-600/[0.06]"></div>
+            <div class="pointer-events-none absolute -top-24 left-1/2 h-48 w-[120%] -translate-x-1/2 bg-gradient-to-b from-amber-400/15 to-transparent blur-3xl"></div>
+            <div class="relative flex flex-col flex-1 min-h-0 p-6 md:p-9">
+                <div class="text-center mb-5 md:mb-6">
+                    <p class="text-[0.6rem] md:text-[0.65rem] font-black uppercase tracking-[0.35em] text-amber-200/55 mb-2">Premium Miner</p>
+                    <h2 class="text-3xl md:text-[2.35rem] font-outfit font-black tracking-tight bg-gradient-to-r from-amber-100 via-amber-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,191,36,0.25)]">Liderlik Panosu</h2>
+                    <p class="text-slate-500 text-center text-[0.65rem] mt-2 font-bold uppercase tracking-widest max-w-md mx-auto leading-relaxed">Kayıtlı oyuncular · Misafir skor göndermez</p>
+                </div>
+                <div class="lb-tab-strip flex flex-wrap gap-2 justify-center mb-5 pb-5 border-b border-white/[0.08]">
+                    <button type="button" id="lb-tab-global" onclick="switchLeaderboardTab('global')" class="lb-tab-btn pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all duration-300 border-white/10 text-slate-300 hover:bg-white/[0.06] hover:border-white/20">
+                        <span class="text-base leading-none">🌍</span> Global
+                    </button>
+                    <button type="button" id="lb-tab-mined" onclick="switchLeaderboardTab('mined')" class="lb-tab-btn pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all duration-300 border-white/10 text-slate-300 hover:bg-white/[0.06] hover:border-white/20">
+                        <span class="text-base leading-none">⛏️</span> Kazı
+                    </button>
+                    <button type="button" id="lb-tab-ore" onclick="switchLeaderboardTab('ore')" class="lb-tab-btn pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all duration-300 border-white/10 text-slate-300 hover:bg-white/[0.06] hover:border-white/20">
+                        <span class="text-base leading-none">💎</span> Değer
+                    </button>
+                    <button type="button" id="lb-tab-depth" onclick="switchLeaderboardTab('depth')" class="lb-tab-btn pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all duration-300 border-white/10 text-slate-300 hover:bg-white/[0.06] hover:border-white/20">
+                        <span class="text-base leading-none">🕳️</span> Derinlik
+                    </button>
+                    <button type="button" id="lb-tab-prog" onclick="switchLeaderboardTab('prog')" class="lb-tab-btn pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all duration-300 border-white/10 text-slate-300 hover:bg-white/[0.06] hover:border-white/20">
+                        <span class="text-base leading-none">📈</span> Gelişim
+                    </button>
+                </div>
+                <div class="overflow-y-auto flex-1 min-h-0 pr-1 lb-scroll">
+                    <div id="lb-panel-global" class="lb-panel">
+                        <section>
+                            <h3 class="text-sm font-black uppercase tracking-[0.2em] text-amber-200/90 flex items-center gap-2 mb-3">
+                                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-400/30 text-lg">🏆</span>
+                                Genel sıralama
+                            </h3>
+                            <div class="lb-table-shell rounded-2xl border border-white/[0.08] overflow-hidden bg-slate-950/40 backdrop-blur-sm">
+                                <table class="lb-table-premium w-full text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-left w-14">Sıra</th>
+                                            <th class="text-left">Kullanıcı adı</th>
+                                            <th class="text-right">Global puan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lb-global-main-tbody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                    <div id="lb-panel-mined" class="lb-panel hidden">
+                        <p class="text-[0.65rem] text-slate-500 uppercase font-bold mb-3 tracking-wider">En çok blok kıran</p>
+                        <div class="lb-table-shell rounded-2xl border border-white/[0.08] overflow-hidden bg-slate-950/40">
+                            <table class="lb-table-premium w-full text-sm">
+                                <thead><tr><th class="text-left w-14">Sıra</th><th class="text-left">Kullanıcı adı</th><th class="text-right">Kazı</th></tr></thead>
+                                <tbody id="lb-tbody-mined"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="lb-panel-ore" class="lb-panel hidden">
+                        <p class="text-[0.65rem] text-slate-500 uppercase font-bold mb-3 tracking-wider">Satılan cevher değeri (toplam)</p>
+                        <div class="lb-table-shell rounded-2xl border border-white/[0.08] overflow-hidden bg-slate-950/40">
+                            <table class="lb-table-premium w-full text-sm">
+                                <thead><tr><th class="text-left w-14">Sıra</th><th class="text-left">Kullanıcı adı</th><th class="text-right">Değer</th></tr></thead>
+                                <tbody id="lb-tbody-ore"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="lb-panel-depth" class="lb-panel hidden">
+                        <p class="text-[0.65rem] text-slate-500 uppercase font-bold mb-3 tracking-wider">En derine inen</p>
+                        <div class="lb-table-shell rounded-2xl border border-white/[0.08] overflow-hidden bg-slate-950/40">
+                            <table class="lb-table-premium w-full text-sm">
+                                <thead><tr><th class="text-left w-14">Sıra</th><th class="text-left">Kullanıcı adı</th><th class="text-right">Derinlik</th></tr></thead>
+                                <tbody id="lb-tbody-depth"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="lb-panel-prog" class="lb-panel hidden">
+                        <p class="text-[0.65rem] text-slate-500 uppercase font-bold mb-3 tracking-wider">Gelişim skoru (yükseltmeler)</p>
+                        <div class="lb-table-shell rounded-2xl border border-white/[0.08] overflow-hidden bg-slate-950/40">
+                            <table class="lb-table-premium w-full text-sm">
+                                <thead><tr><th class="text-left w-14">Sıra</th><th class="text-left">Kullanıcı adı</th><th class="text-right">Skor</th></tr></thead>
+                                <tbody id="lb-tbody-prog"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal()" class="relative w-full mt-5 pt-5 border-t border-white/[0.08] text-slate-400 font-bold hover:text-amber-200/90 text-sm uppercase tracking-wider transition-colors">Kapat <span class="text-slate-600 font-normal">Esc / K</span></button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Alert / Toast (konum + tema: game.js showAlert) -->
+    <div id="alert" class="fixed left-1/2 top-1/2 z-[220] -translate-x-1/2 -translate-y-1/2 max-w-[min(92vw,26rem)] opacity-0 pointer-events-none transition-opacity duration-300" role="status" aria-live="polite" aria-atomic="true">
+        <span id="alert-msg"></span>
+    </div>
+
+    <!-- Floating Texts Container -->
+    <div id="floating-texts" class="fixed inset-0 pointer-events-none z-[110]"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>

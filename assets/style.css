@@ -1,0 +1,421 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap');
+
+body {
+    font-family: 'Outfit', sans-serif;
+}
+
+.font-outfit {
+    font-family: 'Outfit', sans-serif;
+}
+
+.glass-panel {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+.glow-text {
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 40px rgba(99, 102, 241, 0.5);
+}
+
+.floating-text {
+    position: absolute;
+    animation: floatUp 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    pointer-events: none;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.9);
+    z-index: 100;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    15% { transform: translateY(-30px) scale(1.1); opacity: 1; }
+    80% { transform: translateY(-70px) scale(1); opacity: 1; }
+    100% { transform: translateY(-80px) scale(0.9); opacity: 0; }
+}
+
+.shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* YENI EKLENEN STILLER */
+
+.minimap-container {
+    width: 24px;
+    height: 250px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.minimap-player {
+    width: 100%;
+    height: 4px;
+    background: #4ade80;
+    position: absolute;
+    box-shadow: 0 0 10px #4ade80;
+    transition: top 0.1s linear;
+    z-index: 10;
+}
+
+.layer-indicator {
+    position: absolute;
+    width: 100%;
+    opacity: 0.5;
+}
+
+.quest-item {
+    transition: all 0.2s;
+}
+#hud-status-shell.hud-status-collapsed {
+    max-width: 10rem;
+}
+
+/* Sistem mesajları paneli: siyah yarı saydam; dar = son 3; geniş = sabit yükseklik + iç scroll */
+#hud-console.hud-log-surface {
+    background: rgba(0, 0, 0, 0.52);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+#hud-console .hud-log-header {
+    background: rgba(0, 0, 0, 0.58);
+}
+
+#hud-console .hud-log-toggle {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+#hud-console .hud-log-toggle:hover {
+    background: rgba(0, 0, 0, 0.62);
+    border-color: rgba(52, 211, 153, 0.45);
+}
+
+#hud-console .hud-console-body-inner {
+    background: rgba(0, 0, 0, 0.42);
+    flex: 1 1 0%;
+    min-height: 0;
+    min-width: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+#hud-console.hud-log-panel {
+    transition: max-height 0.22s ease-out;
+    flex-direction: column;
+}
+
+#hud-console.hud-log-panel--collapsed {
+    max-height: 8.35rem;
+    height: auto;
+}
+
+#hud-console.hud-log-panel--collapsed .hud-console-body-inner {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#hud-console.hud-log-panel--expanded {
+    max-height: min(42vh, 16rem);
+    height: min(42vh, 16rem);
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 640px) {
+    #hud-console.hud-log-panel--expanded {
+        max-height: min(72vh, 24rem);
+        height: min(72vh, 24rem);
+    }
+}
+
+#hud-console.hud-log-panel--expanded .hud-console-body-inner {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    /* Taşan tüm mesajlar bu alanda kaydırılır */
+    touch-action: pan-y;
+}
+
+/* Durum paneli daraltılınca mesaj paneli aynı genişlik bandında + genişletme kapalı */
+#hud-console.hud-log-locked-to-status {
+    width: 100%;
+    max-width: min(100%, 10rem);
+}
+
+#hud-console .hud-log-toggle:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.hud-console-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 185, 129, 0.35) transparent;
+}
+.hud-console-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.hud-console-scroll::-webkit-scrollbar-thumb {
+    background: rgba(16, 185, 129, 0.35);
+    border-radius: 4px;
+}
+
+.quest-item.completed {
+    opacity: 0.5;
+    background-color: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.3);
+}
+
+/* Akademi modalı: mor ince kaydırma çubuğu */
+.quest-modal-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.35) transparent;
+}
+.quest-modal-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.quest-modal-scroll::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.35);
+    border-radius: 4px;
+}
+
+/* --- HUD durum paneli (premium, animasyonlu) --- */
+#ui:not(.hidden) .hud-status-shell {
+    animation: hudPanelEnter 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes hudPanelEnter {
+    0% {
+        opacity: 0;
+        transform: translate3d(-1rem, -0.5rem, 0) scale(0.98);
+        filter: blur(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.hud-status-ambient {
+    animation: hudAmbientPulse 8s ease-in-out infinite;
+}
+
+@keyframes hudAmbientPulse {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+}
+
+.hud-status-scan {
+    animation: hudScanLine 3s ease-in-out infinite;
+}
+
+@keyframes hudScanLine {
+    0%, 100% { opacity: 0.75; transform: scaleX(1); }
+    50% { opacity: 1; transform: scaleX(0.92); }
+}
+
+.hud-stat-tile {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.hud-stat-value {
+    animation: hudValueGlow 4s ease-in-out infinite;
+}
+
+@keyframes hudValueGlow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.08); }
+}
+
+.hud-bar-track {
+    position: relative;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Enerji çubuğu: renk game.js ile --energy-hue üzerinden güncellenir */
+.hud-bar-track-energy::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 1px solid hsla(var(--energy-hue, 195), 75%, 55%, 0.22);
+    pointer-events: none;
+    transition: border-color 0.35s ease;
+}
+
+.hud-bar-fill.hud-bar-fill-energy {
+    transition: background 0.35s ease, box-shadow 0.35s ease, width 0.3s ease-out;
+}
+
+/* Kritik: enerji < 30 — yanıp sönen uyarı */
+.hud-energy-critical #energy-bar {
+    animation: hudEnergyBlink 0.65s ease-in-out infinite;
+}
+
+.hud-energy-critical #energy-text {
+    animation: hudEnergyBlink 0.65s ease-in-out infinite;
+}
+
+.hud-energy-critical .hud-bar-shine {
+    animation: none;
+    opacity: 0.12;
+}
+
+@keyframes hudEnergyBlink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.22;
+    }
+}
+
+.hud-bar-fill.hud-bar-fill-amber {
+    background: linear-gradient(90deg, #b45309 0%, #eab308 50%, #fde047 100%);
+}
+
+.hud-bar-fill.hud-bar-fill-slate {
+    background: linear-gradient(90deg, #475569 0%, #94a3b8 55%, #e2e8f0 100%);
+    box-shadow: 0 0 10px rgba(148, 163, 184, 0.25);
+}
+
+.hud-bar-fill.hud-bar-fill-purple {
+    background: linear-gradient(90deg, #6b21a8 0%, #a855f7 50%, #d8b4fe 100%);
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.35);
+}
+
+.hud-bar-shine {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 38%,
+        rgba(255, 255, 255, 0.45) 50%,
+        transparent 62%,
+        transparent 100%
+    );
+    background-size: 220% 100%;
+    animation: hudBarShine 2.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.hud-bar-shine-slow {
+    animation-duration: 3.5s;
+}
+
+@keyframes hudBarShine {
+    0% { background-position: 120% 0; }
+    100% { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #ui:not(.hidden) .hud-status-shell {
+        animation: none;
+    }
+    .hud-status-ambient,
+    .hud-status-scan,
+    .hud-stat-value,
+    .hud-bar-shine {
+        animation: none !important;
+    }
+    .hud-energy-critical #energy-bar,
+    .hud-energy-critical #energy-text {
+        animation: none !important;
+        opacity: 1;
+    }
+}
+
+/* --- Liderlik panosu (premium) --- */
+.lb-modal-premium {
+    background: linear-gradient(165deg, rgba(15, 23, 42, 0.92) 0%, rgba(2, 6, 23, 0.94) 50%, rgba(15, 23, 42, 0.9) 100%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+}
+
+.lb-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245, 158, 11, 0.35) transparent;
+}
+.lb-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.lb-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.45), rgba(245, 158, 11, 0.2));
+    border-radius: 6px;
+}
+
+.lb-table-premium thead tr {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(15, 23, 42, 0.4));
+}
+.lb-table-premium thead th {
+    padding: 0.65rem 1rem;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(251, 191, 36, 0.55);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lb-table-premium tbody td {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+.lb-table-compact thead th {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.6rem;
+}
+.lb-table-compact tbody td {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.lb-tr {
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.lb-tr:hover {
+    background: rgba(251, 191, 36, 0.06);
+    box-shadow: inset 3px 0 0 rgba(251, 191, 36, 0.35);
+}
+
+.lb-rank-gold {
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.14), transparent 55%);
+    box-shadow: inset 4px 0 0 rgba(250, 204, 21, 0.85);
+}
+.lb-rank-silver {
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.12), transparent 55%);
+    box-shadow: inset 4px 0 0 rgba(203, 213, 225, 0.65);
+}
+.lb-rank-bronze {
+    background: linear-gradient(90deg, rgba(180, 83, 9, 0.12), transparent 55%);
+    box-shadow: inset 4px 0 0 rgba(217, 119, 6, 0.7);
+}
+.lb-rank-gold:hover,
+.lb-rank-silver:hover,
+.lb-rank-bronze:hover {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.04));
+}
+
+#modal-about .about-modal-scroll {
+    -webkit-overflow-scrolling: touch;
+}
+
